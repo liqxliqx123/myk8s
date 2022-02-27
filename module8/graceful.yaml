@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+  labels:
+    app: mypod
+spec:
+  #  readinessGates:
+  #    - conditionType: "www.example.com/feature-1"
+  containers:
+    - envFrom:
+        - configMapRef:
+            name: conf-demo
+      name: mypod
+      image: myservice
+      imagePullPolicy: Never
+      livenessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /healthz
+          port: 9019
+          scheme: HTTP
+        initialDelaySeconds: 30  #探测延迟时间
+        periodSeconds: 60 #探测间隔
+        successThreshold: 1
+        timeoutSeconds: 1 #探针超时时间
+
+      lifecycle:
+        postStart: #hook
+          exec:
+            command: [ "/bin/sh", "-c", "echo $PORT" ]
+        preStop: #hook
+          exec:
+            command: [ "/bin/sh", "-c", "echo SIGTERM" ]
+      resources:
+        limits:
+          cpu: 1500m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 500Mi
+
+status:
+  qosClass: Burstable
